@@ -1,0 +1,22 @@
+services:
+  gostpanel:
+    image: ghcr.io/apicoder-peng/gostpanel:latest
+    container_name: gostpanel
+    ports:
+      - "39100:39100"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - GIN_MODE=release
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:39100/api/v1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  data:
+  logs:

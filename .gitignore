@@ -1,0 +1,37 @@
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.claude
+
+# 后端
+backend/*.exe
+backend/*.db
+backend/data/
+backend/logs/
+backend/tmp/
+backend/main
+backend/gost-panel
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+frontend/*.log
+
+# 环境变量
+.env
+.env.local
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+*.tmp
+tmp/

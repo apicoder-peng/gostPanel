@@ -1,0 +1,58 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build and Release
+        run: |
+          make release VERSION=${{ github.ref_name }}
+
+      - name: Package binaries
+        working-directory: ./backend
+        run: |
+          # 打包 Linux amd64
+          tar -czvf gost-panel-linux-amd64.tar.gz gost-panel-linux-amd64 config/config.yaml
+          # 打包 Linux arm64
+          tar -czvf gost-panel-linux-arm64.tar.gz gost-panel-linux-arm64 config/config.yaml
+          # 打包 macOS amd64
+          tar -czvf gost-panel-darwin-amd64.tar.gz gost-panel-darwin-amd64 config/config.yaml
+          # 打包 macOS arm64
+          tar -czvf gost-panel-darwin-arm64.tar.gz gost-panel-darwin-arm64 config/config.yaml
+          # 打包 Windows
+          zip gost-panel-windows-amd64.zip gost-panel-windows-amd64.exe config/config.yaml
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            backend/*.tar.gz
+            backend/*.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
