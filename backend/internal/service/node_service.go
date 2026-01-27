@@ -137,11 +137,13 @@ func (s *NodeService) Delete(id uint, userID uint, username string, ip, userAgen
 		return errors.ErrNodeHasRules
 	}
 
-	// 注意: 隧道有 EntryNodeID 和 ExitNodeID 两个外键
 	// 删除节点前，用户需要手动删除相关隧道
+	if len(node.EntryTunnels) > 0 || len(node.ExitTunnels) > 0 {
+		return errors.ErrNodeHasTunnels
+	}
 
 	// 删除节点
-	if err := s.nodeRepo.Delete(id); err != nil {
+	if err = s.nodeRepo.Delete(id); err != nil {
 		return err
 	}
 

@@ -40,7 +40,9 @@ func main() {
 	}); err != nil {
 		panic("初始化日志失败: " + err.Error())
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync()
+	}()
 
 	logger.Info("Gost Panel 启动中...")
 
@@ -177,17 +179,17 @@ func initSystemConfig(db *gorm.DB) error {
 	}
 
 	if count == 0 {
-		config := &model.SystemConfig{
-			SiteTitle: "Gost Panel",
-			LogoURL:   "https://gost.run/images/gost.png",
-			Copyright: "https://github.com/code-gopher/gostPanel",
-			// 设置一些合理的默认值
+		// 设置默认值
+		sysConfig := &model.SystemConfig{
+			SiteTitle:            "Gost Panel",
+			LogoURL:              "https://gost.run/images/gost.png",
+			Copyright:            "https://github.com/code-gopher/gostPanel",
 			LogRetentionDays:     7,
 			LogLevel:             "info",
 			AutoBackup:           false,
 			BackupRetentionCount: 7,
 		}
-		if err := db.Create(config).Error; err != nil {
+		if err := db.Create(sysConfig).Error; err != nil {
 			return err
 		}
 		logger.Info("初始化默认系统配置完成")

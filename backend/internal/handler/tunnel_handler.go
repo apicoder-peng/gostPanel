@@ -1,4 +1,3 @@
-// Package handler 提供 HTTP 请求处理器
 package handler
 
 import (

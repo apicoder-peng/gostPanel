@@ -177,53 +177,7 @@
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="流量限制(Limiters)" name="limiters">
-           <el-table :data="nodeConfig?.limiters || []" style="width: 100%" border size="small">
-             <el-table-column prop="name" label="名称" width="150" />
-             <el-table-column label="配置">
-                <template #default="{ row }">
-                   <span style="font-size: 12px; color: #666">{{ JSON.stringify(row, null, 0).substring(0, 50) }}...</span>
-                </template>
-             </el-table-column>
-             <el-table-column type="expand" label="详情" width="60">
-                <template #default="{ row }">
-                   <pre style="padding: 10px; background: #f5f7fa; border-radius: 4px; font-size: 12px;">{{ JSON.stringify(row, null, 2) }}</pre>
-                </template>
-             </el-table-column>
-          </el-table>
-        </el-tab-pane>
 
-        <el-tab-pane label="并发限制(CLimiters)" name="climiters">
-           <el-table :data="nodeConfig?.climiters || []" style="width: 100%" border size="small">
-             <el-table-column prop="name" label="名称" width="150" />
-             <el-table-column label="配置">
-                <template #default="{ row }">
-                   <span style="font-size: 12px; color: #666">{{ JSON.stringify(row, null, 0).substring(0, 50) }}...</span>
-                </template>
-             </el-table-column>
-             <el-table-column type="expand" label="详情" width="60">
-                <template #default="{ row }">
-                   <pre style="padding: 10px; background: #f5f7fa; border-radius: 4px; font-size: 12px;">{{ JSON.stringify(row, null, 2) }}</pre>
-                </template>
-             </el-table-column>
-          </el-table>
-        </el-tab-pane>
-
-        <el-tab-pane label="速率限制(RLimiters)" name="rlimiters">
-           <el-table :data="nodeConfig?.rlimiters || []" style="width: 100%" border size="small">
-             <el-table-column prop="name" label="名称" width="150" />
-             <el-table-column label="配置">
-                <template #default="{ row }">
-                   <span style="font-size: 12px; color: #666">{{ JSON.stringify(row, null, 0).substring(0, 50) }}...</span>
-                </template>
-             </el-table-column>
-             <el-table-column type="expand" label="详情" width="60">
-                <template #default="{ row }">
-                   <pre style="padding: 10px; background: #f5f7fa; border-radius: 4px; font-size: 12px;">{{ JSON.stringify(row, null, 2) }}</pre>
-                </template>
-             </el-table-column>
-          </el-table>
-        </el-tab-pane>
 
         <el-tab-pane label="观察器(Observers)" name="observers">
            <el-table :data="nodeConfig?.observers || []" style="width: 100%" border size="small">

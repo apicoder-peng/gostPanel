@@ -309,46 +309,8 @@ func (s *RuleService) Start(id uint, userID uint, username string, ip, userAgent
 
 // startForwardRule 启动端口转发规则（直连目标）
 func (s *RuleService) startForwardRule(rule *model.GostRule, node *model.GostNode, client *gost.Client, serviceName string) error {
-	targets := rule.Targets
-	strategy := rule.Strategy
-	if strategy == "" || len(targets) == 1 {
-		strategy = "round"
-	}
-
-	var svc *gost.ServiceConfig
-	if rule.Protocol == model.RuleProtocolTCP {
-		svc = gost.BuildTCPForwardService(serviceName, rule.ListenPort, targets, strategy)
-	} else {
-		svc = gost.BuildUDPForwardService(serviceName, rule.ListenPort, targets, strategy)
-	}
-
-	// 创建观察器
-	observerName, err := CreateObserver(client, s.sysRepo, node.Name, rule.ID)
-	if err != nil {
-		return err
-	}
-	_ = s.ruleRepo.UpdateObserverID(rule.ID, observerName)
-
-	if observerName != "" {
-		svc.Observer = observerName
-		if svc.Metadata == nil {
-			svc.Metadata = make(map[string]any)
-		}
-		svc.Metadata["enableStats"] = true
-		svc.Metadata["observer.period"] = "5s"
-		svc.Metadata["observer.resetTraffic"] = true
-	}
-
-	if err = client.CreateService(svc); err != nil {
-		_ = s.ruleRepo.UpdateStatus(rule.ID, model.RuleStatusError)
-		return errors.ErrRuleStartFailed
-	}
-
-	_ = client.SaveConfig()
-	_ = s.ruleRepo.UpdateStatus(rule.ID, model.RuleStatusRunning)
-	_ = s.ruleRepo.UpdateServiceID(rule.ID, serviceName)
-
-	return nil
+	// 端口转发没有 Chain ID
+	return s.buildAndStartService(client, rule, serviceName, "")
 }
 
 // startTunnelRule 启动隧道转发规则（通过隧道链路）
@@ -378,50 +340,8 @@ func (s *RuleService) startTunnelRule(rule *model.GostRule, node *model.GostNode
 		return errors.ErrTunnelChainNotFound
 	}
 
-	// 构建服务配置
-	targets := rule.Targets
-	strategy := rule.Strategy
-	if strategy == "" || len(targets) == 1 {
-		strategy = "round"
-	}
-
-	var svc *gost.ServiceConfig
-	if rule.Protocol == model.RuleProtocolTCP {
-		svc = gost.BuildTCPForwardService(serviceName, rule.ListenPort, targets, strategy)
-	} else {
-		svc = gost.BuildUDPForwardService(serviceName, rule.ListenPort, targets, strategy)
-	}
-
-	// 关联隧道的 Chain（不是规则自己创建 Chain）
-	svc.Handler.Chain = tunnel.ChainID
-
-	// 创建观察器
-	observerName, err := CreateObserver(client, s.sysRepo, node.Name, rule.ID)
-	if err != nil {
-		return err
-	}
-	_ = s.ruleRepo.UpdateObserverID(rule.ID, observerName)
-
-	if observerName != "" {
-		svc.Observer = observerName
-		if svc.Metadata == nil {
-			svc.Metadata = make(map[string]any)
-		}
-		svc.Metadata["enableStats"] = true
-		svc.Metadata["observer.period"] = "5s"
-		svc.Metadata["observer.resetTraffic"] = true
-	}
-
-	if err = client.CreateService(svc); err != nil {
-		_ = s.ruleRepo.UpdateStatus(rule.ID, model.RuleStatusError)
-		return errors.ErrRuleStartFailed
-	}
-
-	_ = client.SaveConfig()
-	_ = s.ruleRepo.UpdateStatus(rule.ID, model.RuleStatusRunning)
-	_ = s.ruleRepo.UpdateServiceID(rule.ID, serviceName)
-
-	return nil
+	// 使用通用逻辑启动服务，传入 Chain ID
+	return s.buildAndStartService(client, rule, serviceName, tunnel.ChainID)
 }
 
 // Stop 停止规则
@@ -521,4 +441,65 @@ func (s *RuleService) GetStats() (map[string]int64, error) {
 		"forward_type": forwardCount,
 		"tunnel_type":  tunnelCount,
 	}, nil
+}
+
+// setupRuleObserver 配置规则的观察器
+func (s *RuleService) setupRuleObserver(client *gost.Client, rule *model.GostRule, svc *gost.ServiceConfig) error {
+	// 确保全局观察器存在
+	observerName, err := EnsureGlobalObserver(client, s.sysRepo)
+	if err != nil {
+		return err
+	}
+
+	// 更新规则关联的 ObserverID
+	_ = s.ruleRepo.UpdateObserverID(rule.ID, observerName)
+
+	// 配置服务的观察器参数
+	if observerName != "" {
+		svc.Observer = observerName
+		if svc.Metadata == nil {
+			svc.Metadata = make(map[string]any)
+		}
+		svc.Metadata["enableStats"] = true
+		svc.Metadata["observer.period"] = "5s"
+		svc.Metadata["observer.resetTraffic"] = false
+	}
+	return nil
+}
+
+// buildAndStartService 构建并启动 Gost 服务 (处理通用逻辑)
+func (s *RuleService) buildAndStartService(client *gost.Client, rule *model.GostRule, serviceName string, chainID string) error {
+	targets := rule.Targets
+	strategy := rule.Strategy
+	if strategy == "" || len(targets) == 1 {
+		strategy = "round"
+	}
+
+	var svc *gost.ServiceConfig
+	if rule.Protocol == model.RuleProtocolTCP {
+		svc = gost.BuildTCPForwardService(serviceName, rule.ListenPort, targets, strategy)
+	} else {
+		svc = gost.BuildUDPForwardService(serviceName, rule.ListenPort, targets, strategy)
+	}
+
+	// 如果有 Chain ID，则关联（用于隧道转发）
+	if chainID != "" {
+		svc.Handler.Chain = chainID
+	}
+
+	// 配置观察器
+	if err := s.setupRuleObserver(client, rule, svc); err != nil {
+		return err
+	}
+
+	if err := client.CreateService(svc); err != nil {
+		_ = s.ruleRepo.UpdateStatus(rule.ID, model.RuleStatusError)
+		return errors.ErrRuleStartFailed
+	}
+
+	_ = client.SaveConfig()
+	_ = s.ruleRepo.UpdateStatus(rule.ID, model.RuleStatusRunning)
+	_ = s.ruleRepo.UpdateServiceID(rule.ID, serviceName)
+
+	return nil
 }

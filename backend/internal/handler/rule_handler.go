@@ -1,4 +1,3 @@
-// Package handler 提供 HTTP 请求处理器
 package handler
 
 import (
@@ -26,7 +25,7 @@ func NewRuleHandler(ruleService *service.RuleService) *RuleHandler {
 func (h *RuleHandler) Create(c *gin.Context) {
 	var req dto.CreateRuleReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+		response.BadRequest(c, err.Error())
 		return
 	}
 
@@ -55,7 +54,7 @@ func (h *RuleHandler) Update(c *gin.Context) {
 
 	var req dto.UpdateRuleReq
 	if err = c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+		response.BadRequest(c, err.Error())
 		return
 	}
 
@@ -117,7 +116,7 @@ func (h *RuleHandler) GetByID(c *gin.Context) {
 func (h *RuleHandler) List(c *gin.Context) {
 	var req dto.RuleListReq
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+		response.BadRequest(c, err.Error())
 		return
 	}
 

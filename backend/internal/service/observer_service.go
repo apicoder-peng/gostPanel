@@ -1,9 +1,9 @@
 package service
 
 import (
-	"fmt"
 	"gost-panel/internal/dto"
 	"gost-panel/internal/errors"
+	"gost-panel/internal/model"
 	"gost-panel/internal/repository"
 	"gost-panel/pkg/gost"
 	"gost-panel/pkg/logger"
@@ -15,12 +15,14 @@ import (
 // ObserverService 观察器服务
 type ObserverService struct {
 	ruleRepo *repository.RuleRepository
+	nodeRepo *repository.NodeRepository
 }
 
 // NewObserverService 创建观察器服务
 func NewObserverService(db *gorm.DB) *ObserverService {
 	return &ObserverService{
 		ruleRepo: repository.NewRuleRepository(db),
+		nodeRepo: repository.NewNodeRepository(db),
 	}
 }
 
@@ -68,9 +70,32 @@ func (s *ObserverService) updateRuleStats(serviceName string, stats *dto.Observe
 		return err
 	}
 
-	// 更新统计数据
+	// 更新规则统计数据
 	if err := s.ruleRepo.UpdateStats(id, stats.InputBytes, stats.OutputBytes, stats.TotalConns); err != nil {
 		return err
+	}
+
+	// 同步更新节点统计
+	// 1. 查询规则获取关联节点
+	rule, err := s.ruleRepo.FindByID(id)
+	if err != nil {
+		// 如果找不到规则，可能已被删除，忽略错误
+		return nil
+	}
+
+	// 2. 确定节点 ID
+	var nodeID uint
+	if rule.Type == model.RuleTypeTunnel && rule.Tunnel != nil {
+		nodeID = rule.Tunnel.EntryNodeID
+	} else if rule.NodeID != nil {
+		nodeID = *rule.NodeID
+	}
+
+	// 3. 更新节点流量
+	if nodeID > 0 {
+		if err := s.nodeRepo.UpdateStats(nodeID, stats.InputBytes, stats.OutputBytes); err != nil {
+			logger.Warnf("更新节点流量失败: %v", err)
+		}
 	}
 
 	logger.Debugf("更新规则统计: %s%d, In: %d, Out: %d, Req: %d",
@@ -107,16 +132,17 @@ func parseUint(s string, result *uint) (bool, error) {
 	return true, nil
 }
 
-// CreateObserver 创建并配置流量监控观察器
+// EnsureGlobalObserver 确保全局流量监控观察器存在
 // 返回 observerName (如果成功) 或 error
-func CreateObserver(client *gost.Client, sysRepo *repository.SystemConfigRepository, nodeName string, resourceID uint) (string, error) {
+func EnsureGlobalObserver(client *gost.Client, sysRepo *repository.SystemConfigRepository) (string, error) {
 	// 获取系统配置中的面板地址
 	sysConfig, err := sysRepo.Get()
 	if err != nil || sysConfig.PanelURL == "" {
 		return "", errors.ErrPanelURLNotFound
 	}
 
-	observerName := fmt.Sprintf("observer-%s-%d", nodeName, resourceID)
+	// 使用固定名称，确保每个节点只有一个观察器
+	observerName := "observer-global"
 	observer := &gost.ObserverConfig{
 		Name: observerName,
 		Plugin: &gost.PluginConfig{
@@ -127,10 +153,10 @@ func CreateObserver(client *gost.Client, sysRepo *repository.SystemConfigReposit
 	}
 
 	if err = client.CreateObserver(observer); err != nil {
-		logger.Warnf("创建观察器失败: %v", err)
+		logger.Warnf("创建/更新观察器失败: %v", err)
 		return "", errors.ErrObserverCreateFailed
 	}
 
-	logger.Infof("创建观察器成功: %s (URL: %s)", observerName, sysConfig.PanelURL)
+	logger.Infof("确保观察器存在: %s (URL: %s)", observerName, sysConfig.PanelURL)
 	return observerName, nil
 }

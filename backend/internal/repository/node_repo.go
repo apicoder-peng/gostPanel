@@ -47,7 +47,7 @@ func (r *NodeRepository) FindByID(id uint) (*model.GostNode, error) {
 // FindByIDWithRelations 根据 ID 查询节点（包含关联）
 func (r *NodeRepository) FindByIDWithRelations(id uint) (*model.GostNode, error) {
 	var node model.GostNode
-	err := r.DB.Preload("Forwards").Preload("EntryTunnels").Preload("ExitTunnels").First(&node, id).Error
+	err := r.DB.Preload("Rules").Preload("EntryTunnels").Preload("ExitTunnels").First(&node, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -137,4 +137,14 @@ func (r *NodeRepository) CountAll() (int64, error) {
 	var count int64
 	err := r.DB.Model(&model.GostNode{}).Count(&count).Error
 	return count, err
+}
+
+// UpdateStats 累加节点流量
+func (r *NodeRepository) UpdateStats(id uint, inputBytes, outputBytes int64) error {
+	return r.DB.Model(&model.GostNode{}).Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"input_bytes":  gorm.Expr("input_bytes + ?", inputBytes),
+			"output_bytes": gorm.Expr("output_bytes + ?", outputBytes),
+			"total_bytes":  gorm.Expr("total_bytes + ?", inputBytes+outputBytes),
+		}).Error
 }

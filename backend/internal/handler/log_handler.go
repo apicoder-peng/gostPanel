@@ -1,4 +1,3 @@
-// Package handler 提供 HTTP 请求处理器
 package handler
 
 import (
@@ -24,7 +23,7 @@ func NewLogHandler(logService *service.LogService) *LogHandler {
 func (h *LogHandler) List(c *gin.Context) {
 	var req dto.LogListReq
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+		response.BadRequest(c, err.Error())
 		return
 	}
 

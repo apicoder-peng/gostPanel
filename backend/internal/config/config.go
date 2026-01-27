@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -73,10 +74,10 @@ func Load(configPath string) (*Config, error) {
 
 	// 读取配置文件
 	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
 			return nil, fmt.Errorf("读取配置文件失败: %w", err)
 		}
-		// 找不到配置文件时使用默认值，不返回错误
 	}
 
 	// 解析配置到结构体

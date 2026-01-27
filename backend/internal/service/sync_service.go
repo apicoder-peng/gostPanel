@@ -118,14 +118,21 @@ func (s *RuleSyncService) syncNodeRules(node model.GostNode) {
 	}
 
 	// 2. 同步隧道状态
+	// 仅在入口节点检查隧道 Chain 是否存在
+	// 理由：入口节点的 Forward Chain 是隧道存在的核心标志。 exits 节点的 Relay 服务只是依赖。
+	chainStates := make(map[string]bool)
+	for _, chain := range gostCfg.Chains {
+		chainStates[chain.Name] = true
+	}
+
 	tunnels, err := s.tunnelRepo.FindByNodeID(node.ID)
 	if err != nil {
 		logger.Errorf("[Sync] 获取节点 %d 隧道规则失败: %v", node.ID, err)
 	} else {
 		for _, t := range tunnels {
-			// 仅对出口节点同步隧道状态（Relay 服务运行在出口节点）
-			if t.ExitNodeID == node.ID {
-				s.syncTunnelStatus(t, serviceStates)
+			// 仅对入口节点同步隧道状态
+			if t.EntryNodeID == node.ID {
+				s.syncTunnelStatus(t, chainStates)
 			}
 		}
 	}
@@ -149,14 +156,23 @@ func (s *RuleSyncService) syncRuleStatus(r model.GostRule, serviceStates map[str
 }
 
 // syncTunnelStatus 同步隧道状态
-func (s *RuleSyncService) syncTunnelStatus(t model.GostTunnel, serviceStates map[string]string) {
-	// 隧道的服务名称格式为 relay-tunnel-{id}
-	relayServiceName := fmt.Sprintf("relay-tunnel-%d", t.ID)
-	state := serviceStates[relayServiceName]
-	newStatus := utils.GostStateToTunnelStatus(state)
+func (s *RuleSyncService) syncTunnelStatus(t model.GostTunnel, chainStates map[string]bool) {
+	// 检查 Forward Chain 是否存在
+	chainID := t.ChainID
+	if chainID == "" {
+		chainID = fmt.Sprintf("tunnel-%d-chain", t.ID)
+	}
+
+	exists := chainStates[chainID]
+	var newStatus model.TunnelStatus
+	if exists {
+		newStatus = model.TunnelStatusRunning
+	} else {
+		newStatus = model.TunnelStatusStopped
+	}
 
 	if t.Status != newStatus {
-		logger.Infof("[Sync] 隧道 %d (%s) 状态变更: %s -> %s (Gost State: %s)", t.ID, t.Name, t.Status, newStatus, state)
+		logger.Infof("[Sync] 隧道 %d (%s) 状态变更: %s -> %s (Chain Exists: %v)", t.ID, t.Name, t.Status, newStatus, exists)
 		_ = s.tunnelRepo.UpdateStatus(t.ID, newStatus)
 	}
 }
