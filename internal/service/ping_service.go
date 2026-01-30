@@ -87,12 +87,6 @@ func (s *NodeHealthService) checkNodes() {
 			// 状态变更处理
 			if status != n.Status {
 				logger.Infof("节点 %s 状态变更: %s -> %s", n.Name, n.Status, status)
-				if status == model.NodeStatusOffline && n.Status == model.NodeStatusOnline {
-					// 停止其关联的所有规则和隧道
-					_ = s.ruleRepo.StopByNodeID(n.ID)
-					_ = s.tunnelRepo.StopByNodeID(n.ID)
-					logger.Warnf("节点 %s 离线，已停止其关联的所有规则和隧道", n.Name)
-				}
 				if err = s.nodeRepo.UpdateStatus(n.ID, status); err != nil {
 					logger.Errorf("更新节点 %s 状态失败: %v", n.Name, err)
 				}
@@ -102,6 +96,9 @@ func (s *NodeHealthService) checkNodes() {
 			if status == model.NodeStatusOnline {
 				logger.Debugf("节点 %s 在线", n.Name)
 			} else {
+				// 停止其关联的所有规则和隧道
+				_ = s.ruleRepo.StopByNodeID(n.ID)
+				_ = s.tunnelRepo.StopByNodeID(n.ID)
 				logger.Debugf("节点 %s 离线, status=%s, old=%s", n.Name, status, n.Status)
 			}
 
