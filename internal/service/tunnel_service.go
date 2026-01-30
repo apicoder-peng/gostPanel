@@ -384,25 +384,6 @@ func (s *TunnelService) Stop(id uint, userID uint, username string, ip, userAgen
 	return nil
 }
 
-// GetStats 获取隧道统计
-func (s *TunnelService) GetStats() (map[string]int64, error) {
-	total, err := s.tunnelRepo.CountAll()
-	if err != nil {
-		return nil, err
-	}
-
-	running, err := s.tunnelRepo.CountByStatus(model.TunnelStatusRunning)
-	if err != nil {
-		return nil, err
-	}
-
-	return map[string]int64{
-		"total":   total,
-		"running": running,
-		"stopped": total - running,
-	}, nil
-}
-
 // GetChainID 获取隧道的 Chain ID（供规则服务使用）
 func (s *TunnelService) GetChainID(tunnelID uint) (string, error) {
 	tunnel, err := s.tunnelRepo.FindByID(tunnelID)

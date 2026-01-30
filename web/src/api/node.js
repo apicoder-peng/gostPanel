@@ -54,16 +54,6 @@ export function deleteNode(id) {
 }
 
 /**
- * 获取节点统计
- */
-export function getNodeStats() {
-    return request({
-        url: '/nodes/stats',
-        method: 'get'
-    })
-}
-
-/**
  * 获取节点配置
  */
 export function getNodeConfig(id) {

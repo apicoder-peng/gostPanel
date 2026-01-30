@@ -408,37 +408,6 @@ func (s *RuleService) getEntryNodeID(rule *model.GostRule) uint {
 	return 0
 }
 
-// GetStats 获取规则统计
-func (s *RuleService) GetStats() (map[string]int64, error) {
-	total, err := s.ruleRepo.CountAll()
-	if err != nil {
-		return nil, err
-	}
-
-	running, err := s.ruleRepo.CountByStatus(model.RuleStatusRunning)
-	if err != nil {
-		return nil, err
-	}
-
-	forwardCount, err := s.ruleRepo.CountByType(model.RuleTypeForward)
-	if err != nil {
-		return nil, err
-	}
-
-	tunnelCount, err := s.ruleRepo.CountByType(model.RuleTypeTunnel)
-	if err != nil {
-		return nil, err
-	}
-
-	return map[string]int64{
-		"total":        total,
-		"running":      running,
-		"stopped":      total - running,
-		"forward_type": forwardCount,
-		"tunnel_type":  tunnelCount,
-	}, nil
-}
-
 // setupRuleObserver 配置规则的观察器
 func (s *RuleService) setupRuleObserver(client *gost.Client, rule *model.GostRule, svc *gost.ServiceConfig) error {
 	// 确保全局观察器存在

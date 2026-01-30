@@ -72,13 +72,3 @@ export function stopRule(id) {
         method: 'post'
     })
 }
-
-/**
- * 获取规则统计
- */
-export function getRuleStats() {
-    return request({
-        url: '/rules/stats',
-        method: 'get'
-    })
-}

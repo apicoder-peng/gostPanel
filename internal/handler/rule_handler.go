@@ -172,14 +172,3 @@ func (h *RuleHandler) Stop(c *gin.Context) {
 
 	response.SuccessWithMessage(c, "停止成功", nil)
 }
-
-// GetStats 获取规则统计
-func (h *RuleHandler) GetStats(c *gin.Context) {
-	stats, err := h.ruleService.GetStats()
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	response.Success(c, stats)
-}

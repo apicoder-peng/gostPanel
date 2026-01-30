@@ -203,25 +203,6 @@ func (s *NodeService) List(req *dto.NodeListReq) ([]model.GostNode, int64, error
 	return s.nodeRepo.List(opt)
 }
 
-// GetStats 获取节点统计
-func (s *NodeService) GetStats() (map[string]int64, error) {
-	total, err := s.nodeRepo.CountAll()
-	if err != nil {
-		return nil, err
-	}
-
-	online, err := s.nodeRepo.CountByStatus(model.NodeStatusOnline)
-	if err != nil {
-		return nil, err
-	}
-
-	return map[string]int64{
-		"total":   total,
-		"online":  online,
-		"offline": total - online,
-	}, nil
-}
-
 // CreateGostClient 创建节点的 Gost 客户端
 func (s *NodeService) CreateGostClient(id uint) (*gost.Client, error) {
 	node, err := s.nodeRepo.FindByID(id)

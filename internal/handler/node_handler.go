@@ -129,17 +129,6 @@ func (h *NodeHandler) List(c *gin.Context) {
 	response.SuccessPage(c, nodes, total, req.Page, req.PageSize)
 }
 
-// GetStats 获取节点统计
-func (h *NodeHandler) GetStats(c *gin.Context) {
-	stats, err := h.nodeService.GetStats()
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	response.Success(c, stats)
-}
-
 // GetConfig 获取节点配置
 func (h *NodeHandler) GetConfig(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

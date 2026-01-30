@@ -172,14 +172,3 @@ func (h *TunnelHandler) Stop(c *gin.Context) {
 
 	response.SuccessWithMessage(c, "停止成功", nil)
 }
-
-// GetStats 获取隧道统计
-func (h *TunnelHandler) GetStats(c *gin.Context) {
-	stats, err := h.tunnelService.GetStats()
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	response.Success(c, stats)
-}

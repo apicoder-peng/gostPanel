@@ -102,7 +102,6 @@ func (r *Router) Setup(engine *gin.Engine) {
 		authRoutes.PUT("/nodes/:id", nodeHandler.Update)
 		authRoutes.DELETE("/nodes/:id", nodeHandler.Delete)
 		authRoutes.GET("/nodes/:id/config", nodeHandler.GetConfig)
-		authRoutes.GET("/nodes/stats", nodeHandler.GetStats)
 
 		// 规则管理
 		authRoutes.GET("/rules", ruleHandler.List)
@@ -112,7 +111,6 @@ func (r *Router) Setup(engine *gin.Engine) {
 		authRoutes.DELETE("/rules/:id", ruleHandler.Delete)
 		authRoutes.POST("/rules/:id/start", ruleHandler.Start)
 		authRoutes.POST("/rules/:id/stop", ruleHandler.Stop)
-		authRoutes.GET("/rules/stats", ruleHandler.GetStats)
 
 		// 隧道管理
 		authRoutes.GET("/tunnels", tunnelHandler.List)
@@ -122,7 +120,6 @@ func (r *Router) Setup(engine *gin.Engine) {
 		authRoutes.DELETE("/tunnels/:id", tunnelHandler.Delete)
 		authRoutes.POST("/tunnels/:id/start", tunnelHandler.Start)
 		authRoutes.POST("/tunnels/:id/stop", tunnelHandler.Stop)
-		authRoutes.GET("/tunnels/stats", tunnelHandler.GetStats)
 
 		// 操作日志
 		authRoutes.GET("/logs", logHandler.List)

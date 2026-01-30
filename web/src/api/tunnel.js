@@ -54,16 +54,6 @@ export function deleteTunnel(id) {
 }
 
 /**
- * 获取隧道统计
- */
-export function getTunnelStats() {
-    return request({
-        url: '/tunnels/stats',
-        method: 'get'
-    })
-}
-
-/**
  * 启动隧道
  */
 export function startTunnel(id) {

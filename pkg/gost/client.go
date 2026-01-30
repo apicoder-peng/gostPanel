@@ -396,7 +396,7 @@ func BuildTCPForwardService(name string, listenPort int, targets []string, strat
 		Name: name,
 		Addr: fmt.Sprintf(":%d", listenPort),
 		Handler: &HandlerConfig{
-			Type: "tcp",
+			Type: "relay",
 		},
 		Listener: &ListenerConfig{
 			Type: "tcp",
@@ -431,7 +431,7 @@ func BuildUDPForwardService(name string, listenPort int, targets []string, strat
 		Name: name,
 		Addr: fmt.Sprintf(":%d", listenPort),
 		Handler: &HandlerConfig{
-			Type: "udp",
+			Type: "relay",
 		},
 		Listener: &ListenerConfig{
 			Type: "udp",
